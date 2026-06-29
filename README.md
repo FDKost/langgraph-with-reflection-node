@@ -1,76 +1,81 @@
 # LangGraph Reflection Agent
 
-This project demonstrates a simple LangGraph agent that:
-1. Drafts an answer to a user question.
-2. Critiques the draft and decides if a revision is needed.
-3. Rewrites the answer based on the critique.
-4. Repeats the critique–rewrite loop up to a maximum number of rounds.
+This project demonstrates a simple LangGraph workflow that generates an answer to a user question, critiques it, and rewrites it if necessary. The agent uses OpenAI’s GPT-4o-mini model to produce the answer, critique, and rewrite.
+
+## Features
+
+- **Draft Generation** – Produces an initial concise answer (5–10 sentences).
+- **Reflection** – Critiques the draft and decides whether a rewrite is needed.
+- **Rewrite** – Incorporates feedback to produce an improved draft.
+- **Loop Control** – Repeats the critique–rewrite cycle up to a maximum number of rounds (default 2).
+- **CLI** – Run the agent from the command line.
 
 ## Prerequisites
 
-- Python 3.10 or newer
-- An OpenAI API key (set the environment variable `OPENAI_API_KEY`)
+- Python 3.11 or newer
+- An OpenAI API key
 
-## Installation
+## Setup
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/langgraph-reflection-agent.git
+git clone https://github.com/your-username/langgraph-reflection-agent.git
 cd langgraph-reflection-agent
 
-# Create a virtual environment (optional but recommended)
+# Create a virtual environment
 python -m venv .venv
-source .venv/bin/activate  # On Windows use `.venv\\Scripts\\activate`
+source .venv/bin/activate   # On Windows use `.venv\Scripts\activate`
 
 # Install dependencies
-pip install -e .
+pip install -r requirements.txt
+
+# Create a .env file with your OpenAI key
+cp .env.example .env
+# Edit .env and set your key
 ```
 
 ## Usage
 
 ```bash
-# Run the CLI with a question
-langgraph-reflection "Explain to a student the difference between tool and resource in MCP."
+# Run the agent with a question
+python main.py "Explain to a student the difference between tool and resource in MCP."
+```
 
-# Example output
-Draft:
-The difference between a tool and a resource in MCP is that a tool is a device or software that helps you perform a specific task, while a resource is a broader term that includes any material or information that can be used to support learning or development. Tools are often interactive and require active use, whereas resources can be passive references such as books, videos, or datasets. In MCP, tools might include calculators, code editors, or simulation software, while resources could be textbooks, research papers, or online tutorials. Tools are designed to facilitate the application of knowledge, whereas resources provide the knowledge itself. Understanding this distinction helps students choose the right support for their learning goals.
+Sample output:
 
-Critique:
+```
+=== Draft (Round 1) ===
+A tool is a device or software that performs a specific function, while a resource is a broader term that includes any material, information, or asset that can be used to achieve a goal. In the context of MCP, a tool might be a calculator or a spreadsheet, whereas a resource could be a textbook, a dataset, or a team member’s expertise. Tools are often tangible or digital, whereas resources can be intangible. Both are essential for effective problem solving. The key difference lies in their purpose: tools execute tasks, resources provide the means to accomplish tasks.
+
+=== Critique ===
 {
   "verdict": "needs_revision",
   "feedback": [
-    "The answer is too generic and does not mention MCP specifically.",
-    "The explanation of 'tool' and 'resource' could be clearer.",
-    "Add an example that illustrates the difference."
+    "The answer conflates 'resource' with 'asset' without clear distinction.",
+    "The explanation of 'tool' is too generic; give a concrete example.",
+    "The sentence structure is repetitive."
   ]
 }
 
-Rewritten Draft:
-In the context of the MCP (Model-Driven Process), a *tool* is a specific instrument or software that assists in executing a particular task, such as a code editor or a simulation environment. A *resource*, on the other hand, is a broader category that includes any material—textbooks, research papers, or datasets—that provides knowledge or support for learning. While tools are interactive and require active use, resources can be passive references that students consult. For instance, a student might use a code editor (tool) to write and test code, while referring to a textbook (resource) to understand underlying concepts. Recognizing this distinction helps students select the appropriate support for their learning objectives.
-
-Final Answer:
-In the MCP (Model-Driven Process), a *tool* is a specific instrument or software that assists in executing a particular task, such as a code editor or a simulation environment. A *resource*, on the other hand, is a broader category that includes any material—textbooks, research papers, or datasets—that provides knowledge or support for learning. While tools are interactive and require active use, resources can be passive references that students consult. For instance, a student might use a code editor (tool) to write and test code, while referring to a textbook (resource) to understand underlying concepts. Recognizing this distinction helps students select the appropriate support for their learning objectives.
+=== Final Answer ===
+A tool is a device or software that performs a specific function, such as a calculator or a spreadsheet, while a resource is a broader term that includes any material, information, or asset that can be used to achieve a goal. In the context of MCP, a tool might be a calculator or a spreadsheet, whereas a resource could be a textbook, a dataset, or a team member’s expertise. Tools are often tangible or digital, whereas resources can be intangible. Both are essential for effective problem solving. The key difference lies in their purpose: tools execute tasks, resources provide the means to accomplish tasks. The main distinction is that tools are designed to perform tasks, whereas resources are the underlying assets that enable those tasks.
 ```
 
-## How It Works
-
-The agent follows this flow:
+## Project Structure
 
 ```
-START
-  └─> draft_answer
-        └─> reflect
-              ├─> if verdict == "ok" → END
-              └─> if round < max_rounds → rewrite → reflect
+├── main.py          # Entry point and LangGraph workflow
+├── README.md        # Documentation
+├── requirements.txt # Python dependencies
+├── .env.example     # Example environment file
+└── .gitignore
 ```
 
-The default maximum number of rounds is **2**.
+## Extending the Agent
 
-## Customization
-
-- Change the maximum rounds by passing `max_rounds` when initializing the graph.
-- Swap the LLM provider by modifying the `get_llm()` function in `graph.py`.
+- **Change the LLM** – Edit `llm = ChatOpenAI(...)` in `main.py`.
+- **Adjust prompts** – Modify the `PromptTemplate` definitions.
+- **Increase rounds** – Set `state["max_rounds"]` to a higher value.
 
 ## License
 
