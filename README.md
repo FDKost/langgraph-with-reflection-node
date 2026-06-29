@@ -1,85 +1,76 @@
-# LangGraph with Reflection Node
+# LangGraph Reflection Agent
 
-This project demonstrates how to build a simple LangGraph workflow that uses a reflection loop to improve the quality of generated answers.  
-The workflow consists of three main nodes:
+This project demonstrates a simple LangGraph agent that:
+1. Drafts an answer to a user question.
+2. Critiques the draft and decides if a revision is needed.
+3. Rewrites the answer based on the critique.
+4. Repeats the critique–rewrite loop up to a maximum number of rounds.
 
-1. **draft_answer** – Generates an initial answer to a user‑supplied question.  
-2. **reflect** – Critiques the draft and decides whether it is good enough.  
-3. **rewrite** – If the draft is not satisfactory, rewrites it using the critique.
+## Prerequisites
 
-The graph runs until the answer is deemed satisfactory or a maximum number of rounds is reached.
-
-## Features
-
-- Uses LangChain 1.x `ChatOpenAI` for LLM calls.  
-- Implements a simple JSON‑based critique protocol.  
-- CLI entry point for quick experimentation.  
-- Configurable maximum number of reflection rounds.
+- Python 3.10 or newer
+- An OpenAI API key (set the environment variable `OPENAI_API_KEY`)
 
 ## Installation
 
 ```bash
-# Create a virtual environment (recommended)
+# Clone the repository
+git clone https://github.com/yourusername/langgraph-reflection-agent.git
+cd langgraph-reflection-agent
+
+# Create a virtual environment (optional but recommended)
 python -m venv .venv
-source .venv/bin/activate   # On Windows use `.venv\\Scripts\\activate`
+source .venv/bin/activate  # On Windows use `.venv\\Scripts\\activate`
 
 # Install dependencies
-pip install .
-```
-
-> **Note**:  
-> The project uses the OpenAI API.  
-> Set your API key in the environment:
-
-```bash
-export OPENAI_API_KEY="sk-..."
+pip install -e .
 ```
 
 ## Usage
 
 ```bash
-python -m langgraph_reflection "Explain the theory of relativity in simple terms."
-```
+# Run the CLI with a question
+langgraph-reflection "Explain to a student the difference between tool and resource in MCP."
 
-Optional arguments:
-
-- `--max-rounds N` – Maximum number of reflection rounds (default: 2).
-
-Example output:
-
-```
-Final Answer:
- The theory of relativity, developed by Albert Einstein, is a fundamental theory of physics that describes the relationship between space, time, and gravity. It is divided into two parts: special relativity and general relativity. Special relativity deals with objects moving at constant speeds, especially close to the speed of light, and introduces the famous equation E=mc², which shows that energy and mass are interchangeable. General relativity extends this idea to include gravity, describing it as the curvature of spacetime caused by mass and energy. This theory has been confirmed by numerous experiments and is essential for understanding phenomena such as black holes, gravitational waves, and the expansion of the universe.
+# Example output
+Draft:
+The difference between a tool and a resource in MCP is that a tool is a device or software that helps you perform a specific task, while a resource is a broader term that includes any material or information that can be used to support learning or development. Tools are often interactive and require active use, whereas resources can be passive references such as books, videos, or datasets. In MCP, tools might include calculators, code editors, or simulation software, while resources could be textbooks, research papers, or online tutorials. Tools are designed to facilitate the application of knowledge, whereas resources provide the knowledge itself. Understanding this distinction helps students choose the right support for their learning goals.
 
 Critique:
- All good
+{
+  "verdict": "needs_revision",
+  "feedback": [
+    "The answer is too generic and does not mention MCP specifically.",
+    "The explanation of 'tool' and 'resource' could be clearer.",
+    "Add an example that illustrates the difference."
+  ]
+}
 
-Verdict:
- ok
+Rewritten Draft:
+In the context of the MCP (Model-Driven Process), a *tool* is a specific instrument or software that assists in executing a particular task, such as a code editor or a simulation environment. A *resource*, on the other hand, is a broader category that includes any material—textbooks, research papers, or datasets—that provides knowledge or support for learning. While tools are interactive and require active use, resources can be passive references that students consult. For instance, a student might use a code editor (tool) to write and test code, while referring to a textbook (resource) to understand underlying concepts. Recognizing this distinction helps students select the appropriate support for their learning objectives.
+
+Final Answer:
+In the MCP (Model-Driven Process), a *tool* is a specific instrument or software that assists in executing a particular task, such as a code editor or a simulation environment. A *resource*, on the other hand, is a broader category that includes any material—textbooks, research papers, or datasets—that provides knowledge or support for learning. While tools are interactive and require active use, resources can be passive references that students consult. For instance, a student might use a code editor (tool) to write and test code, while referring to a textbook (resource) to understand underlying concepts. Recognizing this distinction helps students select the appropriate support for their learning objectives.
 ```
 
-## Project Structure
+## How It Works
+
+The agent follows this flow:
 
 ```
-langgraph-reflection/
-├── pyproject.toml
-├── src/
-│   └── langgraph_reflection/
-│       └── __init__.py
-├── README.md
-└── tests/
-    └── test_graph.py
+START
+  └─> draft_answer
+        └─> reflect
+              ├─> if verdict == "ok" → END
+              └─> if round < max_rounds → rewrite → reflect
 ```
 
-## Testing
+The default maximum number of rounds is **2**.
 
-Run the unit tests with:
+## Customization
 
-```bash
-pytest
-```
-
-The tests mock the LLM calls to verify that the graph correctly iterates and terminates.
+- Change the maximum rounds by passing `max_rounds` when initializing the graph.
+- Swap the LLM provider by modifying the `get_llm()` function in `graph.py`.
 
 ## License
 

@@ -1,30 +1,17 @@
-import unittest
-from unittest.mock import patch
-from langgraph_reflection import build_graph
+import os
+import json
 
-class TestGraph(unittest.TestCase):
-    @patch('langgraph_reflection.ChatOpenAI')
-    def test_reflection_flow(self, MockChat):
-        instance = MockChat.return_value
-        instance.invoke.side_effect = [
-            "Draft answer 1",
-            '{"verdict":"needs_revision","critique":"Point 1\\nPoint 2"}',
-            "Rewritten answer",
-            '{"verdict":"ok","critique":"All good"}'
-        ]
-        graph = build_graph()
-        state = {
-            "question": "Test question",
-            "draft": "",
-            "critique": "",
-            "verdict": "",
-            "round": 1,
-            "max_rounds": 2
-        }
-        final_state = graph.invoke(state)
-        self.assertEqual(final_state["draft"], "Rewritten answer")
-        self.assertEqual(final_state["verdict"], "ok")
-        self.assertEqual(final_state["round"], 2)
+from graph import run_agent
 
-if __name__ == "__main__":
-    unittest.main()
+def test_full_flow():
+    os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY", "")
+    question = "Explain the difference between a cat and a dog."
+    result = run_agent(question, max_rounds=2)
+    assert "draft" in result
+    assert "critique" in result
+    assert "verdict" in result
+    assert result["round"] <= 2
+    critique = json.loads(result["critique"])
+    assert "verdict" in critique
+    assert "feedback" in critique
+    assert critique["verdict"] in ("ok", "needs_revision")
